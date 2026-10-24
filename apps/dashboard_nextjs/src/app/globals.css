@@ -1,0 +1,192 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Hide scrollbar for horizontal carousels */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Score circle glow */
+.score-glow {
+  box-shadow: 0 0 20px var(--glow-color, rgba(45, 164, 78, 0.3));
+}
+
+/* Theme CSS custom properties — dark (default when .dark class on <html>) */
+:root {
+  --bg-base: #0A0E1A;
+  --bg-gradient: linear-gradient(170deg, #0F1724 0%, #0A0E1A 40%, #111827 100%);
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --nav-bg: rgba(10, 14, 26, 0.8);
+  --nav-border: rgba(255, 255, 255, 0.06);
+}
+
+/* Light mode overrides */
+html:not(.dark) {
+  --bg-base: #f0f4f8;
+  --bg-gradient: linear-gradient(170deg, #e8f0fa 0%, #f0f4f8 40%, #eaf0f8 100%);
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --nav-bg: rgba(248, 250, 252, 0.85);
+  --nav-border: rgba(15, 23, 42, 0.08);
+}
+
+/* Glass card */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+}
+
+/* Color scheme — controls scrollbar, OS-level chrome */
+html { color-scheme: dark; }
+html:not(.dark) { color-scheme: light; }
+
+/* Background on html + body to prevent wrong-color edges */
+html, body {
+  background: var(--bg-base);
+}
+body {
+  background: var(--bg-gradient);
+  min-height: 100vh;
+}
+
+/* Data flow animation for pipeline */
+@keyframes dataFlow {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+.data-flow {
+  stroke-dasharray: 6, 10;
+  animation: dataFlow 8s linear infinite;
+}
+.data-flow-fast {
+  stroke-dasharray: 4, 6;
+  animation: dataFlow 4s linear infinite;
+}
+
+/* Pulse for live indicator */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.live-dot {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+/* Ambient background blobs - CSS-only, compositor-thread animations (transform only, no paint) */
+@keyframes ambient-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(60px, 40px) scale(1.15); }
+  66% { transform: translate(-30px, -20px) scale(0.95); }
+}
+@keyframes ambient-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-50px, -30px) scale(0.9); }
+  66% { transform: translate(40px, 50px) scale(1.1); }
+}
+@keyframes ambient-drift-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -40px) scale(1.1); }
+  66% { transform: translate(-50px, 30px) scale(0.9); }
+}
+.ambient-blob-1 { animation: ambient-drift-1 20s ease-in-out infinite; }
+.ambient-blob-2 { animation: ambient-drift-2 30s ease-in-out infinite; }
+.ambient-blob-3 { animation: ambient-drift-3 40s ease-in-out infinite; }
+
+/* Score circle breathing pulse - CSS-only to avoid JS paint churn */
+@keyframes score-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+.score-breathe {
+  animation: score-breathe 3s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Tier-speed breathing: faster = more excitement */
+.score-breathe-fast {
+  animation: score-breathe 2s ease-in-out infinite;
+  will-change: transform;
+}
+.score-breathe-slow {
+  animation: score-breathe 5s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Sparkle shimmer for best window icon */
+@keyframes sparkle-shimmer {
+  0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+  50% { opacity: 0.7; transform: scale(1.15) rotate(8deg); }
+}
+.sparkle-anim {
+  animation: sparkle-shimmer 2.5s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Dog tail wag when toggled on */
+@keyframes tail-wag {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  75% { transform: rotate(8deg); }
+}
+.dog-wag {
+  animation: tail-wag 0.4s ease-in-out;
+  transform-origin: center;
+}
+
+/* ── Light mode: remap dark-centric utilities ─────────────────────────────── */
+/* Covers components that use hardcoded dark-mode colors without dark: variants */
+
+/* Text: dark-specific grays → AA-contrast equivalents in light mode           */
+/* (Use !important so inline dark: variants in already-updated components win)  */
+html:not(.dark) .text-white     { color: rgb(15 23 42)    !important; } /* slate-900, 21:1 */
+html:not(.dark) .text-slate-200 { color: rgb(51 65 85)    !important; } /* slate-700, 11:1 */
+html:not(.dark) .text-slate-300 { color: rgb(71 85 105)   !important; } /* slate-600,  7:1 */
+html:not(.dark) .text-slate-400 { color: rgb(100 116 139) !important; } /* slate-500, 4.6:1 */
+html:not(.dark) .text-slate-500 { color: rgb(100 116 139) !important; } /* keep at slate-500 */
+
+/* Transparent-white surfaces → transparent-black in light mode */
+html:not(.dark) .bg-white\/\[0\.025\] { background-color: rgba(0,0,0,0.03) !important; }
+html:not(.dark) .bg-white\/\[0\.04\]  { background-color: rgba(0,0,0,0.04) !important; }
+html:not(.dark) .bg-white\/\[0\.05\]  { background-color: rgba(0,0,0,0.04) !important; }
+html:not(.dark) .bg-white\/\[0\.06\]  { background-color: rgba(0,0,0,0.05) !important; }
+html:not(.dark) .bg-white\/\[0\.1\]   { background-color: rgba(0,0,0,0.06) !important; }
+html:not(.dark) .bg-white\/\[0\.12\]  { background-color: rgba(0,0,0,0.07) !important; }
+
+/* Transparent-white borders → transparent-black in light mode */
+html:not(.dark) .border-white\/\[0\.06\]  { border-color: rgba(0,0,0,0.08) !important; }
+html:not(.dark) .border-white\/\[0\.08\]  { border-color: rgba(0,0,0,0.10) !important; }
+html:not(.dark) .border-white\/\[0\.1\]   { border-color: rgba(0,0,0,0.12) !important; }
+html:not(.dark) .border-white\/\[0\.12\]  { border-color: rgba(0,0,0,0.12) !important; }
+html:not(.dark) .border-white\/\[0\.14\]  { border-color: rgba(0,0,0,0.12) !important; }
+
+/* Transparent-white dividers */
+html:not(.dark) .divide-white\/\[0\.04\] > * + * { border-color: rgba(0,0,0,0.06) !important; }
+
+/* Respect reduced motion - disable all custom animations */
+@media (prefers-reduced-motion: reduce) {
+  .score-breathe,
+  .score-breathe-fast,
+  .score-breathe-slow,
+  .sparkle-anim,
+  .dog-wag,
+  .ambient-blob-1,
+  .ambient-blob-2,
+  .ambient-blob-3,
+  .live-dot {
+    animation: none !important;
+  }
+}
+

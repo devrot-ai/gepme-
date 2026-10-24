@@ -1,0 +1,27 @@
+name: CI - Scoring Engine
+
+on:
+  pull_request:
+    paths:
+      - "services/scoring_engine/**"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        working-directory: services/scoring_engine
+        run: uv sync --frozen
+
+      - name: Test
+        working-directory: services/scoring_engine
+        run: uv run pytest tests/ -v

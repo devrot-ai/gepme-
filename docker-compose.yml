@@ -1,0 +1,34 @@
+services:
+  terrasense:
+    build:
+      context: .
+      dockerfile: Dockerfile.terrasense
+    container_name: terrasense-geoai
+    ports:
+      - "8081:8080"
+    environment:
+      - TERRASENSE_PORT=8080
+      - TERRASENSE_LOAD_MODEL=false
+      - TERRASENSE_LOG_LEVEL=info
+      - TERRASENSE_CORS_ORIGINS=*
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    container_name: go-now-dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+      - NEXT_PUBLIC_TERRASENSE_URL=http://localhost:8081
+    depends_on:
+      - terrasense
+    restart: unless-stopped

@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: terrasense-geoai
+    runtime: python
+    rootDir: services/terrasense_geoai
+    buildCommand: pip install -e .
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: TERRASENSE_LOAD_MODEL
+        value: "false"
+      - key: TERRASENSE_LOG_LEVEL
+        value: "info"
+      - key: TERRASENSE_CORS_ORIGINS
+        value: "*"
