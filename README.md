@@ -1,20 +1,42 @@
-# Go Now
+# Go Now — TerraSense GeoAI
 
-**Open-source outdoor activity scoring platform.** Combines wave, weather, UV, air quality, and rain data into a single 0-100 score per activity -- so you know whether to go outside without checking four different apps. Built end-to-end: an hourly data pipeline, a standalone Python scoring library, a REST API, and a mobile-first web app.
+> 🏆 **CSRE IIT Bombay GeoAI Hackathon Submission**  
+> **Problem Statement:** Place-and-Time Outdoor Activity Recommendation Assistant  
+> Full submission paper & architecture documentation: [`docs/16_terrasense_geoai_submission.md`](docs/16_terrasense_geoai_submission.md)
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-go--now.dev-blue)](https://go-now.dev) [![CI - API](https://github.com/NitBuk/go-now/actions/workflows/ci-api.yml/badge.svg)](https://github.com/NitBuk/go-now/actions/workflows/ci-api.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org) [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
+**Open-source outdoor activity scoring & geospatial recommendation platform.** Answers natural-language recreation queries (*"Where should I go for a run tomorrow morning near Powai Lake?"*) by synthesizing **OpenStreetMap spatial topologies**, **Open-Meteo hourly meteorology & air quality**, **OSRM routing**, and **10 activity profiles** with non-bypassable **safety gates** (air quality, torrential rain, heat index, and downwind industrial plumes).
 
-<p align="center">
-  <img src="docs/assets/run-dog-hero.png" width="270" alt="Score view showing Perfect 100 for Run with Dog mode" />
-  &nbsp;&nbsp;
-  <img src="docs/assets/7-day-forcast.png" width="270" alt="Hourly forecast scores and 7-day outlook" />
-  &nbsp;&nbsp;
-  <img src="docs/assets/hourly-conditions.png" width="270" alt="Hour detail sheet showing temperature, waves, wind, UV, AQI, and rain" />
-</p>
-
-> Tel Aviv coast is the first live deployment. The scoring engine is location-agnostic and runs as a standalone Python package with zero cloud dependencies.
+[![GeoAI Tests](https://img.shields.io/badge/TerraSense_Tests-118_Passed-success?logo=pytest)](services/terrasense_geoai/tests) [![Live Demo](https://img.shields.io/badge/Live_Demo-go--now.dev-blue)](https://go-now.dev) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org) [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
 
 ---
+
+## 🚀 GeoAI Hackathon Quickstart (TerraSense GeoAI)
+
+### 1. Run TerraSense GeoAI Test Suite (118 Tests)
+```bash
+uv run --project services/terrasense_geoai pytest services/terrasense_geoai/tests
+```
+
+### 2. Launch the TerraSense GeoAI Service (FastAPI)
+```bash
+uv run --project services/terrasense_geoai uvicorn app:app --host 0.0.0.0 --port 8081
+```
+Interactive OpenAPI documentation will be live at `http://localhost:8081/docs`.
+
+### 3. Launch the Interactive GeoAI Web Dashboard
+```bash
+cd apps/dashboard_nextjs
+npm install && npm run dev
+```
+Visit `http://localhost:3000/geoai` to interact with the natural-language assistant!
+
+### 4. Or Run Entire Stack with Docker Compose
+```bash
+docker-compose up --build
+```
+
+---
+
 
 ## Try It
 

@@ -1,0 +1,28 @@
+FROM python:3.11-slim AS builder
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /app
+
+# Copy terrasense package
+COPY services/terrasense_geoai/ /app/services/terrasense_geoai/
+
+WORKDIR /app/services/terrasense_geoai
+RUN uv sync --no-dev
+
+# --- Runtime ---
+FROM python:3.11-slim
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+COPY --from=builder /app /app
+
+WORKDIR /app/services/terrasense_geoai
+
+EXPOSE 8080
+
+ENV TERRASENSE_PORT=8080 \
+    TERRASENSE_HOST=0.0.0.0 \
+    TERRASENSE_LOAD_MODEL=false
+
+CMD ["uv", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]

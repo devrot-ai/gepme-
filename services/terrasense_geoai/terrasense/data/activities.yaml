@@ -1,0 +1,342 @@
+# Activity-specific profiles for TerraSense GeoAI.
+# Weights are engineering heuristics, not scientifically validated.
+# Venue matchers are OSM tag filters; a candidate must match at least one matcher.
+
+activities:
+  running:
+    display_name: Running or jogging
+    aliases: [running, jogging, run, jog, morning run, evening run]
+    venue_types: [park, recreation_ground, track, footpath, promenade]
+    matchers:
+      - {leisure: park}
+      - {leisure: recreation_ground}
+      - {leisure: track}
+      - {sport: running}
+      - {highway: path}
+      - {highway: footway}
+      - {highway: pedestrian}
+    weather:
+      rain_gate_mm: 2.5
+      rain_gate_prob: 80
+      wind_gate_kmh: 45
+      heat_gate_c: 38
+      heat_warn_c: 32
+      cold_warn_c: 12
+      uv_warn: 8
+      aqi_gate: 150
+      pm25_gate: 75
+      prefer_daylight: false
+      photography_golden_hour: false
+    weights: {weather: 0.45, venue_geo: 0.30, accessibility: 0.25}
+    geo_preferences:
+      green_cover: prefer
+      water: optional
+      industry: avoid
+      roads: prefer_quiet
+    safety_notes:
+      - Hard-gate heavy rain, extreme heat, and unhealthy AQI.
+    prep_categories: [hydration, footwear, sun_protection, air_quality]
+    monitor: [heat, air_quality, traffic_on_shared_paths]
+    avoid_when: [heavy_rain, aqi_unhealthy, extreme_heat]
+
+  cycling:
+    display_name: Cycling for leisure or commuting
+    aliases: [cycling, bike, biking, bicycle, commute by bike, cycle]
+    venue_types: [cycleway, park, bicycle_route]
+    matchers:
+      - {highway: cycleway}
+      - {cycleway: lane}
+      - {cycleway: track}
+      - {leisure: park}
+      - {route: bicycle}
+      - {amenity: bicycle_rental}
+    weather:
+      rain_gate_mm: 3.0
+      rain_gate_prob: 80
+      wind_gate_kmh: 50
+      heat_gate_c: 40
+      heat_warn_c: 34
+      cold_warn_c: 10
+      uv_warn: 8
+      aqi_gate: 160
+      pm25_gate: 80
+      prefer_daylight: false
+      photography_golden_hour: false
+    weights: {weather: 0.40, venue_geo: 0.25, accessibility: 0.35}
+    geo_preferences:
+      green_cover: optional
+      water: optional
+      industry: avoid
+      roads: prefer_cycle_infra
+    safety_notes:
+      - Prefer mapped cycleways over high-speed roads. Live traffic is not available.
+    prep_categories: [lights, helmet, rain_layer, visibility]
+    monitor: [wind, wet_surfaces, road_conditions]
+    avoid_when: [heavy_rain, extreme_wind, aqi_unhealthy]
+
+  golf:
+    display_name: Golf
+    aliases: [golf, golfing, driving range]
+    venue_types: [golf_course]
+    matchers:
+      - {leisure: golf_course}
+      - {sport: golf}
+    weather:
+      rain_gate_mm: 1.5
+      rain_gate_prob: 70
+      wind_gate_kmh: 40
+      heat_gate_c: 40
+      heat_warn_c: 34
+      cold_warn_c: 12
+      uv_warn: 8
+      aqi_gate: 150
+      pm25_gate: 75
+      prefer_daylight: true
+      photography_golden_hour: false
+    weights: {weather: 0.45, venue_geo: 0.40, accessibility: 0.15}
+    geo_preferences:
+      green_cover: prefer
+      water: optional
+      industry: avoid
+      roads: optional
+    safety_notes:
+      - Lightning and heavy rain hard-gate play. Mapped OSM golf courses only.
+    prep_categories: [sun_protection, hydration, rain_layer]
+    monitor: [lightning_risk, wind, uv]
+    avoid_when: [rain, thunderstorm, extreme_wind]
+
+  cricket:
+    display_name: Recreational cricket or practice
+    aliases: [cricket, cricket practice, nets, gully cricket]
+    venue_types: [cricket_pitch, recreation_ground, park]
+    matchers:
+      - {sport: cricket}
+      - {leisure: pitch}
+      - {leisure: recreation_ground}
+      - {leisure: park}
+    weather:
+      rain_gate_mm: 1.0
+      rain_gate_prob: 70
+      wind_gate_kmh: 45
+      heat_gate_c: 40
+      heat_warn_c: 35
+      cold_warn_c: 14
+      uv_warn: 9
+      aqi_gate: 150
+      pm25_gate: 75
+      prefer_daylight: true
+      photography_golden_hour: false
+    weights: {weather: 0.50, venue_geo: 0.30, accessibility: 0.20}
+    geo_preferences:
+      green_cover: prefer
+      water: optional
+      industry: avoid
+      roads: optional
+    safety_notes:
+      - Wet outfield is a hard gate. Prefer sport=cricket pitches when mapped.
+    prep_categories: [sun_protection, hydration, first_aid]
+    monitor: [rain, heat, uv]
+    avoid_when: [wet_outfield, extreme_heat]
+
+  football:
+    display_name: Outdoor football or five-a-side
+    aliases: [football, soccer, five-a-side, 5-a-side, futsal outdoor]
+    venue_types: [pitch, sports_centre]
+    matchers:
+      - {sport: soccer}
+      - {leisure: pitch}
+      - {leisure: sports_centre}
+      - {leisure: recreation_ground}
+    weather:
+      rain_gate_mm: 2.0
+      rain_gate_prob: 75
+      wind_gate_kmh: 50
+      heat_gate_c: 38
+      heat_warn_c: 33
+      cold_warn_c: 12
+      uv_warn: 9
+      aqi_gate: 140
+      pm25_gate: 70
+      prefer_daylight: true
+      photography_golden_hour: false
+    weights: {weather: 0.45, venue_geo: 0.35, accessibility: 0.20}
+    geo_preferences:
+      green_cover: prefer
+      water: optional
+      industry: avoid
+      roads: optional
+    safety_notes:
+      - Prefer sport=soccer pitches. Heat + exertion is a conservative gate for children.
+    prep_categories: [hydration, footwear, sun_protection]
+    monitor: [heat, pitch_wetness, aqi]
+    avoid_when: [heavy_rain, extreme_heat, aqi_unhealthy]
+
+  tennis:
+    display_name: Outdoor tennis
+    aliases: [tennis, outdoor tennis]
+    venue_types: [tennis_court]
+    matchers:
+      - {sport: tennis}
+      - {leisure: pitch}
+    weather:
+      rain_gate_mm: 0.4
+      rain_gate_prob: 60
+      wind_gate_kmh: 35
+      heat_gate_c: 38
+      heat_warn_c: 33
+      cold_warn_c: 12
+      uv_warn: 8
+      aqi_gate: 150
+      pm25_gate: 75
+      prefer_daylight: true
+      photography_golden_hour: false
+    weights: {weather: 0.50, venue_geo: 0.35, accessibility: 0.15}
+    geo_preferences:
+      green_cover: optional
+      water: optional
+      industry: avoid
+      roads: optional
+    safety_notes:
+      - Any meaningful rain hard-gates outdoor tennis. Prefer sport=tennis courts.
+    prep_categories: [sun_protection, grip, hydration]
+    monitor: [rain, wind, court_surface]
+    avoid_when: [rain, high_wind]
+
+  hiking:
+    display_name: Hiking or a nature walk
+    aliases: [hiking, hike, trek, nature walk, trail walk, walking trail]
+    venue_types: [nature_reserve, wood, path, park]
+    matchers:
+      - {leisure: nature_reserve}
+      - {natural: wood}
+      - {landuse: forest}
+      - {highway: path}
+      - {route: hiking}
+      - {leisure: park}
+      - {tourism: viewpoint}
+    weather:
+      rain_gate_mm: 4.0
+      rain_gate_prob: 85
+      wind_gate_kmh: 55
+      heat_gate_c: 38
+      heat_warn_c: 32
+      cold_warn_c: 8
+      uv_warn: 8
+      aqi_gate: 150
+      pm25_gate: 75
+      prefer_daylight: true
+      photography_golden_hour: false
+    weights: {weather: 0.40, venue_geo: 0.40, accessibility: 0.20}
+    geo_preferences:
+      green_cover: prefer
+      water: prefer
+      industry: avoid
+      roads: prefer_quiet
+    safety_notes:
+      - Daylight preferred. Map coverage of trails is incomplete.
+    prep_categories: [water, footwear, sun_protection, navigation]
+    monitor: [heat, storm, trail_wetness]
+    avoid_when: [thunderstorm, extreme_heat, after_dark]
+
+  picnic:
+    display_name: Picnic or park outing
+    aliases: [picnic, park outing, outdoor lunch, park]
+    venue_types: [park, garden, picnic_site]
+    matchers:
+      - {leisure: park}
+      - {leisure: garden}
+      - {tourism: picnic_site}
+      - {leisure: recreation_ground}
+    weather:
+      rain_gate_mm: 0.8
+      rain_gate_prob: 65
+      wind_gate_kmh: 40
+      heat_gate_c: 40
+      heat_warn_c: 34
+      cold_warn_c: 14
+      uv_warn: 8
+      aqi_gate: 140
+      pm25_gate: 70
+      prefer_daylight: true
+      photography_golden_hour: false
+    weights: {weather: 0.40, venue_geo: 0.45, accessibility: 0.15}
+    geo_preferences:
+      green_cover: prefer
+      water: prefer
+      industry: avoid
+      roads: prefer_quiet
+    safety_notes:
+      - Rain is a hard gate even if greenery/access scores are high.
+    prep_categories: [shade, insect, hydration, waste]
+    monitor: [rain, uv, crowds]
+    avoid_when: [rain, thunderstorm, unhealthy_air]
+
+  outdoor_event:
+    display_name: Outdoor event or gathering
+    aliases: [outdoor event, gathering, party, birthday, outdoor birthday, meetup]
+    venue_types: [park, square, recreation_ground]
+    matchers:
+      - {leisure: park}
+      - {leisure: recreation_ground}
+      - {place: square}
+      - {highway: pedestrian}
+      - {leisure: stadium}
+    weather:
+      rain_gate_mm: 1.0
+      rain_gate_prob: 70
+      wind_gate_kmh: 45
+      heat_gate_c: 40
+      heat_warn_c: 34
+      cold_warn_c: 14
+      uv_warn: 8
+      aqi_gate: 140
+      pm25_gate: 70
+      prefer_daylight: false
+      photography_golden_hour: false
+    weights: {weather: 0.45, venue_geo: 0.30, accessibility: 0.25}
+    geo_preferences:
+      green_cover: prefer
+      water: optional
+      industry: avoid
+      roads: prefer_access
+    safety_notes:
+      - Conservative rain/heat gates for mixed-age groups.
+    prep_categories: [shade, hydration, rain_plan, first_aid]
+    monitor: [rain, heat, air_quality]
+    avoid_when: [rain, thunderstorm, extreme_heat]
+
+  photography:
+    display_name: Outdoor photography session
+    aliases: [photography, photos, sunset photos, photo walk, shooting]
+    venue_types: [viewpoint, waterfront, park, historic]
+    matchers:
+      - {tourism: viewpoint}
+      - {tourism: attraction}
+      - {natural: beach}
+      - {natural: water}
+      - {leisure: park}
+      - {historic: monument}
+      - {historic: memorial}
+    weather:
+      rain_gate_mm: 2.0
+      rain_gate_prob: 80
+      wind_gate_kmh: 55
+      heat_gate_c: 42
+      heat_warn_c: 36
+      cold_warn_c: 8
+      uv_warn: 10
+      aqi_gate: 180
+      pm25_gate: 100
+      prefer_daylight: false
+      photography_golden_hour: true
+    weights: {weather: 0.30, venue_geo: 0.50, accessibility: 0.20}
+    geo_preferences:
+      green_cover: prefer
+      water: prefer
+      industry: optional
+      roads: optional
+    safety_notes:
+      - Golden hour and sunset rewarded. Rain is a soft-to-hard gate depending on intensity.
+    prep_categories: [weather_protection, extra_battery, polarizer]
+    monitor: [light, rain, wind]
+    avoid_when: [heavy_rain, thunderstorm]

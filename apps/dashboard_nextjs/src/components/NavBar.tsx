@@ -9,6 +9,7 @@ import ThemeToggle from "./ThemeToggle";
 
 const NAV_LINKS = [
   { href: "/", label: "Forecast" },
+  { href: "/geoai", label: "GeoAI Assistant" },
   { href: "/status", label: "Status" },
   { href: "/formula", label: "Formula" },
   { href: "/about", label: "About" },

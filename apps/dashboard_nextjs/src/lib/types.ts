@@ -100,3 +100,133 @@ export const VIBE_LINES: Record<string, string[]> = {
     "Somewhere between 'no' and 'absolutely not.'",
   ],
 };
+
+// --- TerraSense GeoAI Types ---
+
+export type TerraSenseActivity =
+  | "running"
+  | "cycling"
+  | "golf"
+  | "cricket"
+  | "football"
+  | "tennis"
+  | "hiking"
+  | "picnic"
+  | "outdoor_event"
+  | "photography";
+
+export type TerraSenseConstraint =
+  | "asthma"
+  | "children"
+  | "older_adults"
+  | "dog"
+  | "heat_sensitive";
+
+export interface TerraSenseRecommendRequest {
+  question: string;
+  activity?: TerraSenseActivity;
+  location?: string;
+  radius_km?: number;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface TerraSenseCandidate {
+  rank: number;
+  place_name: string;
+  coordinates: { latitude: number; longitude: number };
+  osm: {
+    id: number;
+    type: string;
+    tags: Record<string, string>;
+    distance_from_origin_m?: number;
+    name?: string;
+    geometry_type: string;
+  };
+  local_time: string;
+  timezone: string;
+  score: {
+    weather: number;
+    venue_geo: number;
+    accessibility: number;
+    total: number;
+    label: string;
+    hard_gated: boolean;
+    gate_reasons: string[];
+    plus_factors: string[];
+    minus_factors: string[];
+    missing_data: string[];
+  };
+  weather: {
+    time_iso: string;
+    temperature_c?: number;
+    apparent_temperature_c?: number;
+    precipitation_mm?: number;
+    precipitation_probability_pct?: number;
+    wind_speed_kmh?: number;
+    wind_direction_deg?: number;
+    wind_gusts_kmh?: number;
+    uv_index?: number;
+    european_aqi?: number;
+    pm2_5?: number;
+    pm10?: number;
+    weather_code?: number;
+    missing_fields: string[];
+  };
+  spatial: {
+    candidate_id: string;
+    nearest_green_m?: number;
+    nearest_green_name?: string;
+    nearest_water_m?: number;
+    nearest_water_name?: string;
+    nearest_industrial_m?: number;
+    downwind_from_industrial: boolean;
+    route_distance_m?: number;
+    route_duration_s?: number;
+    live_traffic_available: boolean;
+    completeness_notes: string[];
+  };
+  carry: string[];
+  monitor: string[];
+  avoid_if: string[];
+  evidence_ids: string[];
+}
+
+export interface TerraSenseRecommendationResponse {
+  request_id: string;
+  question: string;
+  intent: {
+    activity?: TerraSenseActivity;
+    place_name?: string;
+    latitude?: number;
+    longitude?: number;
+    radius_km: number;
+    date_text?: string;
+    time_window_text?: string;
+    duration_minutes: number;
+    constraints: TerraSenseConstraint[];
+    preferences: string[];
+    unsupported: boolean;
+    missing_location: boolean;
+    confidence: number;
+    parser: "llm" | "heuristic" | "hybrid";
+  };
+  origin?: { latitude: number; longitude: number };
+  origin_label?: string;
+  timezone?: string;
+  recommendation: "go" | "caution" | "avoid" | "clarify" | "unsupported" | "no_venues";
+  summary: string;
+  candidates: TerraSenseCandidate[];
+  avoid_reasons: string[];
+  limitations: string[];
+  sources: Array<{
+    id: string;
+    source: string;
+    retrieved_at_utc: string;
+    confidence: number;
+    caveats: string[];
+  }>;
+  model: Record<string, unknown>;
+  attribution: string[];
+  generated_at_utc: string;
+}
