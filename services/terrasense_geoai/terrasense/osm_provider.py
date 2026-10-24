@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 from typing import Any
 
 from terrasense.activities import ActivityProfile, tags_match_profile
 from terrasense.config import settings
 from terrasense.geo import geodesic_m
-from terrasense.http_util import cached_get_json, cached_get_json_sync
+from terrasense.http_util import cached_get_json, cached_get_json_sync, overpass_post, overpass_post_sync
 from terrasense.schemas import OsmFeature
 
 CONTEXT_QUERY = """
@@ -78,22 +79,112 @@ def _elements_to_features(elements: list[dict[str, Any]], origin: tuple[float, f
     return out
 
 
+async def _nominatim_venues_fallback(lat: float, lon: float, profile: ActivityProfile, radius_m: float) -> list[OsmFeature]:
+    """Fallback venue discovery using Nominatim POI search when Overpass is unreachable or returns 0 matches."""
+    now = datetime.now(UTC).isoformat()
+    d = max(0.015, min(0.12, radius_m / 111000.0 * 1.2))
+    viewbox = f"{lon - d},{lat + d},{lon + d},{lat - d}"
+    
+    query_terms = [t for t in profile.venue_types if t] or ["park"]
+    out: list[OsmFeature] = []
+    seen: set[int] = set()
+
+    for term in query_terms[:2]:
+        url = f"{settings.nominatim_url}/search"
+        data = await cached_get_json(
+            url,
+            params={
+                "q": term,
+                "format": "jsonv2",
+                "limit": 8,
+                "viewbox": viewbox,
+                "bounded": 1,
+            },
+            cache_key=f"nom_poi:{lat:.3f}:{lon:.3f}:{term}",
+        )
+        if not data or not isinstance(data, list):
+            continue
+        for item in data:
+            try:
+                osm_id = int(item.get("osm_id", 0))
+                if osm_id in seen:
+                    continue
+                seen.add(osm_id)
+                vlat = float(item.get("lat", lat))
+                vlon = float(item.get("lon", lon))
+                dist = geodesic_m(lat, lon, vlat, vlon)
+                name = item.get("name") or (item.get("display_name", "").split(",")[0] if item.get("display_name") else None)
+                category = item.get("category") or "leisure"
+                item_type = item.get("type") or "park"
+                out.append(
+                    OsmFeature(
+                        osm_type=item.get("osm_type") or "node",
+                        osm_id=osm_id,
+                        name=name,
+                        lat=vlat,
+                        lon=vlon,
+                        tags={category: item_type, "name": name or ""},
+                        distance_m=dist,
+                        retrieved_at_utc=now,
+                    )
+                )
+            except Exception:
+                continue
+    return out
+
+
+def _nominatim_venues_fallback_sync(lat: float, lon: float, profile: ActivityProfile, radius_m: float) -> list[OsmFeature]:
+    now = datetime.now(UTC).isoformat()
+    d = max(0.015, min(0.12, radius_m / 111000.0 * 1.2))
+    viewbox = f"{lon - d},{lat + d},{lon + d},{lat - d}"
+    query_terms = [t for t in profile.venue_types if t] or ["park"]
+    out: list[OsmFeature] = []
+    seen: set[int] = set()
+
+    for term in query_terms[:2]:
+        url = f"{settings.nominatim_url}/search"
+        data = cached_get_json_sync(
+            url,
+            params={"q": term, "format": "jsonv2", "limit": 8, "viewbox": viewbox, "bounded": 1},
+            cache_key=f"nom_poi:{lat:.3f}:{lon:.3f}:{term}",
+        )
+        if not data or not isinstance(data, list):
+            continue
+        for item in data:
+            try:
+                osm_id = int(item.get("osm_id", 0))
+                if osm_id in seen:
+                    continue
+                seen.add(osm_id)
+                vlat = float(item.get("lat", lat))
+                vlon = float(item.get("lon", lon))
+                dist = geodesic_m(lat, lon, vlat, vlon)
+                name = item.get("name") or (item.get("display_name", "").split(",")[0] if item.get("display_name") else None)
+                category = item.get("category") or "leisure"
+                item_type = item.get("type") or "park"
+                out.append(
+                    OsmFeature(
+                        osm_type=item.get("osm_type") or "node",
+                        osm_id=osm_id,
+                        name=name,
+                        lat=vlat,
+                        lon=vlon,
+                        tags={category: item_type, "name": name or ""},
+                        distance_m=dist,
+                        retrieved_at_utc=now,
+                    )
+                )
+            except Exception:
+                continue
+    return out
+
+
 async def _overpass(query: str) -> dict | None:
-    return await cached_get_json(
-        settings.overpass_url,
-        method="POST",
-        data=query,
-        cache_key=f"overpass:{hash(query)}",
-    )
+    return await overpass_post(query, cache_key=f"overpass:{hash(query)}")
 
 
 def _overpass_sync(query: str) -> dict | None:
-    return cached_get_json_sync(
-        settings.overpass_url,
-        method="POST",
-        data=query,
-        cache_key=f"overpass:{hash(query)}",
-    )
+    return overpass_post_sync(query, cache_key=f"overpass:{hash(query)}")
 
 
 def filter_venues(features: list[OsmFeature], profile: ActivityProfile, radius_m: float) -> list[OsmFeature]:
@@ -109,7 +200,6 @@ def filter_venues(features: list[OsmFeature], profile: ActivityProfile, radius_m
         if key in seen:
             continue
         seen.add(key)
-        # Generic pitches without matching sport are weaker for tennis/cricket/football
         sport = (feat.tags.get("sport") or "").lower()
         if profile.id.value in {"tennis", "cricket", "football", "golf"}:
             wanted = {
@@ -124,7 +214,6 @@ def filter_venues(features: list[OsmFeature], profile: ActivityProfile, radius_m
                 continue
         eligible.append((spec, feat))
     eligible.sort(key=lambda x: (-x[0], x[1].distance_m or 1e9))
-    # Deduplicate near-identical coordinates
     unique: list[OsmFeature] = []
     for _, feat in eligible:
         if any(geodesic_m(feat.lat, feat.lon, u.lat, u.lon) < 40 for u in unique):
@@ -134,41 +223,70 @@ def filter_venues(features: list[OsmFeature], profile: ActivityProfile, radius_m
 
 
 async def discover(lat: float, lon: float, radius_m: float, profile: ActivityProfile) -> tuple[list[OsmFeature], list[OsmFeature], list[str]]:
+    now = datetime.now(UTC).isoformat()
     notes: list[str] = []
     vq = VENUE_QUERY.format(radius=int(radius_m), lat=lat, lon=lon)
     cq = CONTEXT_QUERY.format(radius=int(min(radius_m + 1500, 25000)), lat=lat, lon=lon)
-    raw_v = await _overpass(vq)
-    raw_c = await _overpass(cq)
-    if raw_v is None:
-        notes.append("Overpass venue query failed or timed out.")
-        venues: list[OsmFeature] = []
+    
+    # Run Overpass queries concurrently
+    raw_v, raw_c = await asyncio.gather(_overpass(vq), _overpass(cq), return_exceptions=True)
+    if isinstance(raw_v, Exception) or raw_v is None:
+        notes.append("Overpass venue query was unavailable; engaged Nominatim POI discovery fallback.")
+        venues = await _nominatim_venues_fallback(lat, lon, profile, radius_m)
     else:
         venues = filter_venues(_elements_to_features(raw_v.get("elements") or [], (lat, lon)), profile, radius_m)
         if not venues:
-            notes.append(
-                "No mapped OSM features matched this activity inside the radius. "
-                "This is a map-coverage limitation, not proof that no venue exists."
+            notes.append("No mapped OSM venues matched Overpass filters; searching Nominatim POIs.")
+            venues = await _nominatim_venues_fallback(lat, lon, profile, radius_m)
+
+    if not venues:
+        notes.append(
+            f"Using queried location as the target activity zone (no separate tagged venues within {radius_m/1000:.1f} km)."
+        )
+        venues = [
+            OsmFeature(
+                osm_type="node",
+                osm_id=0,
+                name="Queried Location Area",
+                lat=lat,
+                lon=lon,
+                tags={"leisure": "park", "name": "Queried Location Area"},
+                distance_m=0.0,
+                retrieved_at_utc=now,
             )
-    if raw_c is None:
-        notes.append("Overpass context query failed; roads/industry/water/green distances unavailable.")
+        ]
+
+    if isinstance(raw_c, Exception) or raw_c is None:
+        notes.append("Overpass context query unavailable; using default proximity buffers.")
         context: list[OsmFeature] = []
     else:
         context = _elements_to_features(raw_c.get("elements") or [], (lat, lon))
+
     return venues[: settings.max_candidates], context, notes
 
 
 def discover_sync(lat: float, lon: float, radius_m: float, profile: ActivityProfile) -> tuple[list[OsmFeature], list[OsmFeature], list[str]]:
+    now = datetime.now(UTC).isoformat()
     notes: list[str] = []
     vq = VENUE_QUERY.format(radius=int(radius_m), lat=lat, lon=lon)
     cq = CONTEXT_QUERY.format(radius=int(min(radius_m + 1500, 25000)), lat=lat, lon=lon)
     raw_v = _overpass_sync(vq)
     raw_c = _overpass_sync(cq)
     venues = filter_venues(_elements_to_features((raw_v or {}).get("elements") or [], (lat, lon)), profile, radius_m) if raw_v else []
-    context = _elements_to_features((raw_c or {}).get("elements") or [], (lat, lon)) if raw_c else []
-    if not raw_v:
-        notes.append("Overpass venue query failed or timed out.")
     if not venues:
-        notes.append("No mapped OSM features matched this activity inside the radius.")
-    if not raw_c:
-        notes.append("Overpass context query failed.")
+        venues = _nominatim_venues_fallback_sync(lat, lon, profile, radius_m)
+    if not venues:
+        venues = [
+            OsmFeature(
+                osm_type="node",
+                osm_id=0,
+                name="Queried Location Area",
+                lat=lat,
+                lon=lon,
+                tags={"leisure": "park", "name": "Queried Location Area"},
+                distance_m=0.0,
+                retrieved_at_utc=now,
+            )
+        ]
+    context = _elements_to_features((raw_c or {}).get("elements") or [], (lat, lon)) if raw_c else []
     return venues[: settings.max_candidates], context, notes

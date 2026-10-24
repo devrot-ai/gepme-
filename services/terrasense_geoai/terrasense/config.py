@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     open_meteo_aq_url: str = "https://air-quality-api.open-meteo.com/v1/air-quality"
 
     user_agent: str = "TerraSenseGeoAI/0.1 (GeoAI Hackathon CSRE IITB; https://github.com/NitBuk/go-now)"
-    http_timeout_s: float = 20.0
+    http_timeout_s: float = 30.0
     cache_ttl_s: int = 600
     max_candidates: int = 8
     max_hours: int = 12
